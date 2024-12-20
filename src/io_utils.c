@@ -366,6 +366,31 @@ static int oZFile_puts(const ZFile *zfile, const char *s)
 	error("write error");
 }
 
+static size_t oZFile_fwrite(const ZFile *zfile, const void *data_ptr,
+			size_t size, size_t nitems)
+{
+	int ztype;
+	size_t n = 0;
+	void *file;
+
+	ztype = zfile->ztype;
+	file = zfile->file;
+	switch (ztype) {
+	    case UNCOMPRESSED:
+		n = fwrite(data_ptr, size, nitems, (FILE *) file);
+		break;
+	    case GZ_TYPE:
+		n = gzfwrite(data_ptr, size, nitems, (gzFile) file);
+		break;
+	    default:
+		error(INTERNAL_ERR_IN "oZFile_puts(): "
+		      "invalid ztype value %d", ztype);
+	}
+	if(n == nitems) return nitems;
+	error("write error (attempted to write %zu elements, wrote %zu)",
+		nitems, n);
+}
+
 static void oZFile_putc(const ZFile *zfile, int c)
 {
 	int ztype;
