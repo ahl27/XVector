@@ -366,6 +366,29 @@ static int oZFile_puts(const ZFile *zfile, const char *s)
 	error("write error");
 }
 
+static void oZFile_putc(const ZFile *zfile, int c)
+{
+	int ztype;
+	void *file;
+
+	ztype = zfile->ztype;
+	file = zfile->file;
+	switch (ztype) {
+	    case UNCOMPRESSED:
+		if (fputc(c, (FILE *) file) != EOF)
+			return;
+		break;
+	    case GZ_TYPE:
+		if (gzputc((gzFile) file, c) != -1)
+			return;
+		break;
+	    default:
+		error(INTERNAL_ERR_IN "oZFile_putc(): "
+		      "invalid ztype value %d", ztype);
+	}
+	error("write error");
+}
+
 static size_t oZFile_fwrite(const ZFile *zfile, const void *data_ptr,
 			size_t size, size_t nitems)
 {
@@ -389,29 +412,6 @@ static size_t oZFile_fwrite(const ZFile *zfile, const void *data_ptr,
 	if(n == nitems) return nitems;
 	error("write error (attempted to write %zu elements, wrote %zu)",
 		nitems, n);
-}
-
-static void oZFile_putc(const ZFile *zfile, int c)
-{
-	int ztype;
-	void *file;
-
-	ztype = zfile->ztype;
-	file = zfile->file;
-	switch (ztype) {
-	    case UNCOMPRESSED:
-		if (fputc(c, (FILE *) file) != EOF)
-			return;
-		break;
-	    case GZ_TYPE:
-		if (gzputc((gzFile) file, c) != -1)
-			return;
-		break;
-	    default:
-		error(INTERNAL_ERR_IN "oZFile_putc(): "
-		      "invalid ztype value %d", ztype);
-	}
-	error("write error");
 }
 
 /****************************************************************************
