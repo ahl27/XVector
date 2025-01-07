@@ -32,6 +32,7 @@ static const R_CallMethodDef callMethods[] = {
 	CALLMETHOD_DEF(SharedVector_Ocopy_from_start, 6),
 	CALLMETHOD_DEF(SharedVector_Ocopy_from_subscript, 4),
 	CALLMETHOD_DEF(SharedVector_mcopy, 7),
+	CALLMETHOD_DEF(SharedVector_order, 3),
 
 /* SharedRaw_class.c */
 	CALLMETHOD_DEF(SharedRaw_new, 2),

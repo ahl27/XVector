@@ -277,6 +277,27 @@ SharedVector.compare <- function(x1, start1, x2, start2, width)
     .Call2("SharedVector_memcmp",
           x1, start1, x2, start2, width, PACKAGE="XVector")
 
+SharedVector.order <- function(x, decreasing=FALSE){
+    ## will have to add in method arg later
+    ## adding 1L because this method returns 0-indexed values
+    .Call("SharedVector_order",
+        x, length(x), decreasing, PACKAGE="XVector") + 1L
+}
+setMethod("order", "SharedVector",
+    function(..., na.last=TRUE, decreasing=FALSE, method=c("auto", "shell", "radix")){
+        args <- list(...)
+        if (length(args) == 1L) {
+            x <- args[[1L]]
+            SharedVector.order(x, decreasing)
+        } else {
+            args <- unname(args)
+            do.call(order, c(args, list(na.last=na.last,
+                                        decreasing=decreasing,
+                                        method=method)))
+        }
+    }
+)
+
 
 ### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Low-level copy.

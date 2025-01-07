@@ -169,6 +169,8 @@ setMethod("bindROWS", "XVector", .concatenate_XVector_objects)
 ### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Equality
 ###
+### order() and sameAsPreviousROW are required to make XVector compatible with
+### the equality functions defined in S4Vectors
 
 .XVector.equal <- function(x, y)
 {
@@ -184,3 +186,30 @@ setMethod("==", signature(e1="XVector", e2="XVector"),
     function(e1, e2) .XVector.equal(e1, e2)
 )
 
+.XVector.order <- function(x, decreasing=FALSE){
+    SharedVector.order(x@shared, decreasing)
+}
+setMethod("order", "XVector",
+    function(..., na.last=TRUE, decreasing=FALSE, method=c("auto", "shell", "radix")){
+        args <- list(...)
+        if (length(args) == 1L) {
+            x <- args[[1L]]
+            .XVector.order(x, decreasing)
+        } else {
+            args <- unname(args)
+            do.call(order, c(args, list(na.last=na.last,
+                                        decreasing=decreasing,
+                                        method=method)))
+        }
+    }
+)
+
+.XVector.sameAsPreviousROW <- function(x){
+    if(NROW(x) == 0){
+        logical(0L)
+    } else {
+        c(FALSE, vapply(seq_along(head(x,n=-1L)),
+                        \(i){ x[i] == x[i+1] }, logical(1L)))
+    }
+}
+setMethod("sameAsPreviousROW", "XVector", .XVector.sameAsPreviousROW)

@@ -259,6 +259,46 @@ SEXP SharedVector_memcmp(SEXP x1, SEXP start1, SEXP x2, SEXP start2, SEXP width)
 	return ans;
 }
 
+SEXP SharedVector_order(SEXP x, SEXP width, SEXP descending)
+{
+	SEXP ans;
+	int nelt, desc;
+	SEXP tag = _get_SharedVector_tag(x);
+	nelt = INTEGER(width)[0];
+	desc = LOGICAL(descending)[0];
+
+	PROTECT(ans = NEW_INTEGER(nelt));
+	int *indices = INTEGER(ans);
+	for(int i=0; i<nelt; i++)
+		indices[i] = i;
+
+	const void *s;
+	int eltsize;
+	int use_double_compar = 0;
+	if (IS_RAW(tag)){
+		s = RAW(tag);
+		eltsize = sizeof(Rbyte);
+	} else if (IS_INTEGER(tag)){
+		s = INTEGER(tag);
+		eltsize = sizeof(int);
+	} else if (IS_NUMERIC(tag)) {
+		s = REAL(tag);
+		eltsize = sizeof(double);
+		use_double_compar = 1;
+	} else {
+		error("XVector internal error in SharedVector_order(): "
+		      "%s: invalid tag type", CHAR(type2str(TYPEOF(tag))));
+	}
+
+	int status = sort_void_array(indices, nelt, s, eltsize, desc,
+																use_double_compar, 0, NULL, NULL);
+	if(status != 1){
+		error("XVector internal error while sorting in SharedVector_order. Please report!");
+	}
+	UNPROTECT(1);
+	return ans;
+}
+
 SEXP SharedVector_Ocopy_from_start(SEXP out, SEXP in, SEXP in_start, SEXP width,
 		SEXP lkup, SEXP reverse)
 {

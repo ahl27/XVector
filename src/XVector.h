@@ -311,6 +311,8 @@ SEXP SharedVector_memcmp(
 	SEXP width
 );
 
+SEXP SharedVector_order(SEXP x, SEXP width, SEXP descending);
+
 SEXP SharedVector_Ocopy_from_start(
 	SEXP out,
 	SEXP in,
