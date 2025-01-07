@@ -565,6 +565,11 @@ void _filexp_putc(SEXP filexp, int c)
 	return;
 }
 
+size_t _filexp_fwrite(SEXP filexp, const void *data_ptr, size_t size, size_t nitems){
+	CHECK_USER_INTERRUPT(2000);
+	return oZFile_fwrite(R_ExternalPtrAddr(filexp), data_ptr, size, nitems);
+}
+
 static SEXP new_filexp(SEXP filepath,
 		const char *mode, const char *compress, int level)
 {
