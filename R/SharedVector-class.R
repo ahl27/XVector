@@ -291,9 +291,8 @@ setMethod("order", "SharedVector",
             SharedVector.order(x, decreasing)
         } else {
             args <- unname(args)
-            do.call(order, c(args, list(na.last=na.last,
-                                        decreasing=decreasing,
-                                        method=method)))
+            lapply(args, order,
+                na.last=na.last, decreasing=decreasing, method=method)
         }
     }
 )
@@ -394,5 +393,9 @@ setMethod("==", signature(e1="SharedVector", e2="SharedVector"),
 
 setMethod("!=", signature(e1="SharedVector", e2="SharedVector"),
     function(e1, e2) address(e1@xp) != address(e2@xp)
+)
+
+setMethod("<=", signature(e1="SharedVector", e2="SharedVector"),
+    function(e1, e2) address(e1@xp) <= address(e2@xp)
 )
 

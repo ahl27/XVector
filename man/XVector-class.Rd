@@ -15,6 +15,13 @@
 \alias{as.numeric,XVector-method}
 \alias{show,XVector-method}
 \alias{==,XVector,XVector-method}
+\alias{<=,XVector,XVector-method}
+\alias{>=,XVector,XVector-method}
+\alias{<,XVector,XVector-method}
+\alias{>,XVector,XVector-method}
+\alias{!=,XVector,XVector-method}
+\alias{pcompare,XVector,XVector-method}
+\alias{order,XVector,XVector-method}
 
 % XRaw class, functions and methods:
 \alias{class:XRaw}
@@ -78,6 +85,31 @@
   The purpose of the X* containers is to provide a "pass by address"
   semantic and also to avoid the overhead of copying the sequence
   data when a linear subsequence needs to be extracted.
+}
+
+\section{Comparison operations on XVector objects}{
+Unlike the R's base vectors, comparing two XVector objects works \emph{atomically} -- that is, it doesn't compare element-by-element, but rather the two vectors as a whole. Thus, the return value of a comparison between two XVector objects will always be a single logical value. Comparison between an XVector and a base vector is performed by coercing the base vector to the same type as the XVector prior to comparison (potentially throwing an error if the comparison is impossible!).
+
+For element-wise comparison, the following are provided:
+
+  \describe{
+    \item{\code{pcompare(x,y)}:}{
+      Compares the elements of two vectors \code{x} and \code{y} in an
+      element-wise fashion. If \code{length(x) != length(y)}, the shorter
+      length vector is recycled to the length of the longer. Returns a
+      vector where the i'th element is:
+      \itemize{
+      \item negative if \code{x[i] < y[i]}
+      \item zero if \code{x[i] == y[i]}
+      \item positive if \code{x[i] > y[i]}
+      } More details are
+      available in the help page available via S4Vectors:
+      \code{\link[S4Vectors]{pcompare}}.
+    }
+    \item{\code{order(..., na.last=TRUE, decreasing=FALSE, method=c("auto", "shell", "radix"))}:}{
+      Returns a permutation vector that rearranges its first argument into ascending or descending order, similar to \code{\link[base]{order}}. Argument \code{na.last} is ignored, since XVector objects do not allow \code{NA} values. Argument \code{method} is currently ignored, but will be implemented in the future. If multiple XVectors are passed, returns a list of permutation vectors for each XVector.
+    }
+  }
 }
 
 \section{Additional Subsetting operations on XVector objects}{
@@ -168,6 +200,26 @@
 
   x3[length(x3):1]
   x3[length(x3):1, drop=FALSE]
+
+  ## ---------------------------------------------------------------------
+  ## C. Comparing XVector OBJECTS
+  ## ---------------------------------------------------------------------
+  xv <- XInteger(5, 1:5)
+  yv <- XInteger(5, 5:1)
+
+  ## Comparison between XVector objects is ATOMIC
+  xv == yv ## FALSE
+  xv <  yv ## TRUE
+
+  ## Element-wise comparison uses pcompare
+  pcompare(xv, yv)  ## -1 -1  0  1  1
+  pcompare(yv, xv)  ##  1  1  0 -1 -1
+  pcompare(xv, 5:1) ## equivalent to pcompare(xv, yv)
+
+  ## Convert to T/F values by comparing against zero:
+  pcompare(xv, yv) <  0 ## element-wise xv <  yv
+  pcomapre(xv, yv) >= 0 ## element-size xv >= yv
+
 }
 
 \keyword{methods}

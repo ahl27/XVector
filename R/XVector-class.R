@@ -169,8 +169,56 @@ setMethod("bindROWS", "XVector", .concatenate_XVector_objects)
 ### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Equality
 ###
-### order() and sameAsPreviousROW are required to make XVector compatible with
-### the equality functions defined in S4Vectors
+
+.XVector.equal <- function(x, y)
+{
+    if (class(x) != class(y) || x@length != y@length)
+        return(FALSE)
+    ans <- !SharedVector.compare(x@shared, x@offset + 1L,
+                                 y@shared, y@offset + 1L,
+                                 x@length)
+    as.logical(ans)
+}
+
+.XVector.lt_or_equal <- function(x, y)
+{
+    if (class(x) != class(y) || x@length != y@length)
+        return(FALSE)
+    ans <- SharedVector.compare(x@shared, x@offset + 1L,
+                                 y@shared, y@offset + 1L,
+                                 x@length)
+    ans <= 0
+}
+
+setMethod("==", signature(e1="XVector", e2="XVector"),
+    function(e1, e2) .XVector.equal(e1, e2)
+)
+
+setMethod("<=", signature(e1="XVector", e2="XVector"),
+    function(e1, e2) .XVector.lt_or_equal(e1, e2)
+)
+
+setMethod("==", signature(e1="XVector", e2="ANY"),
+    function(e1, e2) e1 == as(e2, class(e1))
+)
+setMethod("<=", signature(e1="XVector", e2="ANY"),
+    function(e1, e2) e1 <= as(e2, class(e1))
+)
+
+## These methods are required, otherwise it dispatches to base comparison
+## (which is element-wise)
+setMethod("==", signature(e1="ANY", e2="XVector"),
+    function(e1, e2) e2 == e1
+)
+setMethod("<=", signature(e1="ANY", e2="XVector"),
+    function(e1, e2) !(e2 > e1)
+)
+
+### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+### Parallel comparison
+###
+### order() and sameAsPreviousROW make XVector compatible with pcompare
+###  as defined in S4Vectors
 
 .XVector.order <- function(x, decreasing=FALSE){
     SharedVector.order(x@shared, decreasing)
@@ -183,9 +231,10 @@ setMethod("order", "XVector",
             .XVector.order(x, decreasing)
         } else {
             args <- unname(args)
-            do.call(order, c(args, list(na.last=na.last,
-                                        decreasing=decreasing,
-                                        method=method)))
+            ## do.call("order", args) doesn't work here
+            ## I can't figure out why...this produces the same result
+            lapply(args, order,
+                na.last=na.last, decreasing=decreasing, method=method)
         }
     }
 )
@@ -200,30 +249,11 @@ setMethod("order", "XVector",
 }
 setMethod("sameAsPreviousROW", "XVector", .XVector.sameAsPreviousROW)
 
-## These methods are defined so that the XVector argument comes first
+## This methods are defined so that the XVector argument comes first
 ## this matters because of how S4Vectors::pcompare is defined; it attempts
 ## to coerce the second argument to a list and then concatenate, which can
 ## cause weird behavior if the first element is an atomic vector and the
 ## second is an XVector object.
-setMethod("==", signature(e1="ANY", e2="XVector"),
-    function(e1, e2) { pcompare(e2, e1) == 0 }
+setMethod("pcompare", signature(x="ANY", y="XVector"),
+    function(x, y) -1*callNextMethod(y, x)
 )
-
-setMethod("<=", signature(e1="ANY", e2="XVector"),
-    function(e1, e2) { pcompare(e2, e1) >= 0L }
-)
-
-.XVector.equal <- function(x, y)
-{
-    if (class(x) != class(y) || x@length != y@length)
-        return(FALSE)
-    ans <- !SharedVector.compare(x@shared, x@offset + 1L,
-                                 y@shared, y@offset + 1L,
-                                 x@length)
-    as.logical(ans)
-}
-
-setMethod("==", signature(e1="XVector", e2="XVector"),
-    function(e1, e2) .XVector.equal(e1, e2)
-)
-
